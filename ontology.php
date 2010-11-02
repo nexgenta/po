@@ -34,6 +34,8 @@ abstract class ProgrammesOntology
 			return new POSeries();
 		case 'Brand':
 			return new POBrand();
+		case 'Version':
+			return new POVersion();
 		}
 	}
 
@@ -47,7 +49,20 @@ abstract class ProgrammesOntology
 		if($g instanceof POThing)
 		{
 			$s = $g->subject();
-			if($g instanceof POEpisode || $g instanceof POSeries)
+			if($g instanceof POVersion)
+			{
+				foreach($doc->graphs as $graph)
+				{
+					if(!isset($g->episode) && $graph instanceof POEpisode)
+					{
+						if($graph->hasVersion($s))
+						{
+							$g->episode = $graph->subject();
+						}
+					}
+				}
+			}
+			else if($g instanceof POEpisode || $g instanceof POSeries)
 			{
 				foreach($doc->graphs as $graph)
 				{
@@ -102,6 +117,11 @@ class POThing extends RDFGraph
 	}
 }
 
+class POVersion extends POThing
+{
+	public $episode = null;
+}
+
 class POEpisode extends POThing
 {
 	public $versions = array();
@@ -127,6 +147,19 @@ class POEpisode extends POThing
 			}
 		}
 	}
+
+	public function hasVersion($uri)
+	{
+		foreach($this->versions as $v)
+		{
+			if(!strcmp($uri, $v))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 }
 
 class POSeries extends POThing
